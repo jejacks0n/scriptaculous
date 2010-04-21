@@ -949,12 +949,24 @@ Effect.Morph = Class.create(Effect.Base, {
         return parseInt( color.slice(i*2+1,i*2+3), 16 );
       });
     }
+    function parseRect(rect, dimensions){
+      var parts = ((rect) ? rect.match(/rect\((.*)\)/i)[1].replace(/(\w+)(?:\W+)/g, "$1 ") : 'auto auto auto auto').split(' ', 4), i = 0;
+      return parts.map(function(v) {++i;
+        var ret = (v != 'auto') ? Math.round(parseInt(v)) :
+          (i == 1) ? 0 : (i == 2) ? dimensions.width : (i == 3) ? dimensions.height : 0;
+        return ret;
+      });
+    }
     this.transforms = this.style.map(function(pair){
       var property = pair[0], value = pair[1], unit = null;
 
       if (value.parseColor('#zzzzzz') != '#zzzzzz') {
         value = value.parseColor();
         unit  = 'color';
+      } else if (property == 'clip') {
+        var dimensions = this.element.getDimensions();
+        value = parseRect(value, dimensions);
+        unit = 'rect';
       } else if (property == 'opacity') {
         value = parseFloat(value);
         if (Prototype.Browser.IE && (!this.element.currentStyle.hasLayout))
@@ -968,7 +980,7 @@ Effect.Morph = Class.create(Effect.Base, {
       var originalValue = this.element.getStyle(property);
       return {
         style: property.camelize(),
-        originalValue: unit=='color' ? parseColor(originalValue) : parseFloat(originalValue || 0),
+        originalValue: unit=='color' ? parseColor(originalValue) : unit=='rect' ? parseRect(originalValue, dimensions) : parseFloat(originalValue || 0),
         targetValue: unit=='color' ? parseColor(value) : value,
         unit: unit
       };
@@ -976,7 +988,7 @@ Effect.Morph = Class.create(Effect.Base, {
       return (
         (transform.originalValue == transform.targetValue) ||
         (
-          transform.unit != 'color' &&
+          (transform.unit != 'color' && transform.unit != 'rect') &&
           (isNaN(transform.originalValue) || isNaN(transform.targetValue))
         )
       );
@@ -993,6 +1005,11 @@ Effect.Morph = Class.create(Effect.Base, {
             (transform.targetValue[1]-transform.originalValue[1])*position)).toColorPart() +
           (Math.round(transform.originalValue[2]+
             (transform.targetValue[2]-transform.originalValue[2])*position)).toColorPart() :
+        transform.unit=='rect' ? 'rect('+
+          (Math.round(transform.originalValue[0]+(transform.targetValue[0]-transform.originalValue[0])*position)) + 'px,' +
+          (Math.round(transform.originalValue[1]+(transform.targetValue[1]-transform.originalValue[1])*position)) + 'px,' +
+          (Math.round(transform.originalValue[2]+(transform.targetValue[2]-transform.originalValue[2])*position)) + 'px,' +
+          (Math.round(transform.originalValue[3]+(transform.targetValue[3]-transform.originalValue[3])*position)) + 'px)' :
         (transform.originalValue +
           (transform.targetValue - transform.originalValue) * position).toFixed(3) +
             (transform.unit === null ? '' : transform.unit);

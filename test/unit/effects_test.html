@@ -429,7 +429,7 @@
         assertEqual('40px', $('error_test_ul').getStyle('font-size'));
         assertEqual('#ffffff', $('error_message_2').getStyle('background-color').parseColor());
         assertEqual('20px', $('error_message_2').getStyle('font-size'));
-        assertEqual('rect(10px, 10px, 10px, 10px)', $('error_message_2').getStyle('clip'));
+        assertMatch(/rect\(\d.px,?\s*\d.px,?\s*\d.px,?\s*\d.px,?\s*\)/, $('error_message_2').getStyle('clip'));
         assertEqual('italic', $('error_message_3').getStyle('font-style'));
         assertEqual('20px', $('error_message_3').getStyle('font-size'));
         assertEqual(.5, $('error_message_3').getStyle('opacity'));
